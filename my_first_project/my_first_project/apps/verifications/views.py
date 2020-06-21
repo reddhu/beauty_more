@@ -5,9 +5,10 @@ from captcha.image import ImageCaptcha
 from django_redis import get_redis_connection
 from django.http import HttpResponse, JsonResponse
 import logging
+from celery_tasks.sms.tasks import ccp_send_sms_code
 
 logger = logging.getLogger('django')
-from my_first_project.utils.yuntongxun.ccp_sms import CCP
+# from my_first_project.utils.yuntongxun.ccp_sms import CCP
 
 
 # Create your views here.
@@ -55,16 +56,17 @@ class SMSCodeView(View):
                 'code': 400,
                 'errmsg': '验证码错误'
             })
-        if redis_conn.ttl(f'sms_{mobile}')>240:
-            redis_conn.delete(f'sms_{mobile}')
+        if redis_conn.ttl(f'sms_{mobile}')>240 and redis_conn.get(f'sms_{mobile}'):
             return JsonResponse({
                 'code': 400,
                 'errmsg': '请勿频繁发送'
             })
         sms_code = randomNumber()
-        redis_conn.set(f'sms_{mobile}', 300, sms_code)
-        CCP().send_template_sms('15334200702', (sms_code, 5), 1)
+        redis_conn.setex(f'sms_{mobile}', 300, sms_code)
+        # CCP().send_template_sms(mobile, (sms_code, 5), 1)
+        ccp_send_sms_code.delay(mobile, sms_code)
         return JsonResponse({
             'code': 0,
             'errmsg': '短信发送成功'
         })
+
