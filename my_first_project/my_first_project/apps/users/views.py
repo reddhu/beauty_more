@@ -4,8 +4,10 @@ from .models import User
 import json
 import re
 from django_redis import get_redis_connection
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 import logging
+# from my_first_project.utils.view import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 logger = logging.getLogger('django')
 
@@ -96,7 +98,7 @@ class RegisterView(View):
             'code': 0,
             'errmsg': 'ok'
         })
-        response.set_cookie('username', username)
+        response.set_cookie('username', username, max_age=3600 * 24 * 14)
         return response
 
 
@@ -124,14 +126,37 @@ class LoginView(View):
             })
         login(request, user)
         response = JsonResponse({
-                'code': 0,
-                'errmsg': 'ok'
-            })
+            'code': 0,
+            'errmsg': 'ok'
+        })
         if remembered:
             request.session.set_expiry(None)
         else:
             request.session.set_expiry(0)
-        response.set_cookie('username', username)
+        response.set_cookie('username', user.username, max_age=3600 * 24 * 14)
         return response
 
 
+class LogoutView(View):
+    def delete(self, request):
+        logout(request)
+        response = JsonResponse({
+            'code': 0,
+            'errmsg': 'ok'
+        })
+        response.delete_cookie('username')
+        return response
+
+
+class UserInfoView(LoginRequiredMixin, View):
+    def get(self, request):
+        print('用户中心函数')
+        return JsonResponse({
+            'code': 0,
+            'errmsg': 'ok',
+            'info_data': {
+                'username': request.user.username,
+                'mobile': request.user.mobile,
+                'email': request.user.email,
+            }
+        })
