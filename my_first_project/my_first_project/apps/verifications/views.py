@@ -7,6 +7,7 @@ from django.http import HttpResponse, JsonResponse
 import logging
 from celery_tasks.sms.tasks import ccp_send_sms_code
 
+
 logger = logging.getLogger('django')
 # from my_first_project.utils.yuntongxun.ccp_sms import CCP
 

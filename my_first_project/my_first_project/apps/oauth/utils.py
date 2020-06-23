@@ -2,7 +2,7 @@ from itsdangerous import TimedJSONWebSignatureSerializer, BadData
 from django.conf import settings
 
 locker = TimedJSONWebSignatureSerializer(
-    secret_key='settings.SECRET_KEY',
+    secret_key=settings.SECRET_KEY,
     expires_in=3600
 )
 

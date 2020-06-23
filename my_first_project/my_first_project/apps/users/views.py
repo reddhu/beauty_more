@@ -6,7 +6,9 @@ import re
 from django_redis import get_redis_connection
 from django.contrib.auth import login, authenticate, logout
 import logging
-# from my_first_project.utils.view import LoginRequiredMixin
+from django.core.mail import send_mail
+from celery_tasks.email.tasks import send_email
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 logger = logging.getLogger('django')
@@ -34,7 +36,7 @@ class MobileCountView(View):
 
 class RegisterView(View):
     def post(self, request):
-        data_dict = json.loads(request.body)#身体
+        data_dict = json.loads(request.body)  # 身体
         password = data_dict.get('password')
         password2 = data_dict.get('password2')
         mobile = data_dict.get('mobile')
@@ -47,7 +49,7 @@ class RegisterView(View):
                 'code': 400,
                 'errmsg': '参数不全'
             })
-        if not re.match(r'^[a-zA-Z0-9]{5,20}$', username):#匹配
+        if not re.match(r'^[a-zA-Z0-9]{5,20}$', username):  # 匹配
             return JsonResponse({
                 'code': 400,
                 'errmsg': '账号格式有误'
@@ -138,7 +140,7 @@ class LoginView(View):
 
 
 class LogoutView(View):
-    def delete(self, request):#flush  remove clear strip erase
+    def delete(self, request):  # flush  remove clear strip erase
         logout(request)
         response = JsonResponse({
             'code': 0,
@@ -158,5 +160,46 @@ class UserInfoView(LoginRequiredMixin, View):
                 'username': request.user.username,
                 'mobile': request.user.mobile,
                 'email': request.user.email,
+                'email_active': request.user.email_active,
             }
         })
+
+
+class EmailView(View):
+    def put(self, request):
+        data = json.loads(request.body)
+        to_email = data.get('email')
+        if not to_email:
+            return JsonResponse({'code': 400,
+                                 'errmsg': '缺少email参数'})
+        if not re.match(r'^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', to_email):
+            return JsonResponse({'code': 400,
+                                 'errmsg': '参数email有误'})
+        try:
+            request.user.email = to_email
+            request.user.save()
+        except Exception as e:
+            return JsonResponse({
+                'code': 400, 'errmsg': '数据写入失败'
+            })
+        token = request.user.generate_token()
+        verify_url = settings.EMAIL_VERIFY_URL + token
+        send_email.delay(to_email, verify_url)
+
+        return JsonResponse({'code': 200, 'errmsg': 'ok'})
+
+
+class VerifyEmailView(View):
+    def put(self, request):
+        token = request.GET.get('token')
+        user = User.check_token(token)
+        if user:
+            try:
+                user.email_active = True
+                user.save()
+            except Exception as e:
+                return JsonResponse({'code': 400, 'errmsg': '数据写入失败'})
+        else:
+            return None
+
+        return HttpResponse({'code': 0, 'errmsg': 'ok'})
