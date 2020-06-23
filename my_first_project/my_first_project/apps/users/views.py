@@ -34,7 +34,7 @@ class MobileCountView(View):
 
 class RegisterView(View):
     def post(self, request):
-        data_dict = json.loads(request.body)
+        data_dict = json.loads(request.body)#身体
         password = data_dict.get('password')
         password2 = data_dict.get('password2')
         mobile = data_dict.get('mobile')
@@ -47,7 +47,7 @@ class RegisterView(View):
                 'code': 400,
                 'errmsg': '参数不全'
             })
-        if not re.match(r'^[a-zA-Z0-9]{5,20}$', username):
+        if not re.match(r'^[a-zA-Z0-9]{5,20}$', username):#匹配
             return JsonResponse({
                 'code': 400,
                 'errmsg': '账号格式有误'
@@ -138,7 +138,7 @@ class LoginView(View):
 
 
 class LogoutView(View):
-    def delete(self, request):
+    def delete(self, request):#flush  remove clear strip erase
         logout(request)
         response = JsonResponse({
             'code': 0,

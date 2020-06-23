@@ -28,6 +28,7 @@ class ImageCodeView(View):
                 'code': 400,
                 'errmsg': '出错啦'
             })
+        print(text)
         return HttpResponse(image, content_type='image/jpg')
 
 
@@ -63,6 +64,7 @@ class SMSCodeView(View):
             })
         sms_code = randomNumber()
         redis_conn.setex(f'sms_{mobile}', 300, sms_code)
+        print(sms_code)
         # CCP().send_template_sms(mobile, (sms_code, 5), 1)
         ccp_send_sms_code.delay(mobile, sms_code)
         return JsonResponse({
