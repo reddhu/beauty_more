@@ -37,9 +37,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    'django_crontab',
     'users',
     'verifications',
     'oauth',
+    'areas',
+    'contents',
+    'goods',
 
 ]
 
@@ -215,3 +219,12 @@ EMAIL_HOST_PASSWORD = 'KJKVWJYRKWTHTMLQ'
 EMAIL_FROM = 'redd<redd_django@163.com>'
 
 EMAIL_VERIFY_URL = 'http://www.meiduo.site:8080/success_verify_email.html?token='
+
+DEFAULT_FILE_STORAGE = 'my_first_project.utils.fastdfs.fastdfs_storage.FastDFSStorage'
+FDFS_URL = 'http://image.meiduo.site:8888/'
+
+GENERATE_STATIC_HTML = os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), 'front_end_pc')
+CRONJOBS = [
+    # 每1分钟生成一次首页静态文件
+    ('*/1 * * * *', 'contents.generate_index.generate_static_index_html', '>> ' + os.path.join(BASE_DIR, 'logs/crontab.log'))
+]
