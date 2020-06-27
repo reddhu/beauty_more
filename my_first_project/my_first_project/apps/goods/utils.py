@@ -1,17 +1,28 @@
 import os
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'my_first_project.settings.dev')
-import django
-
-django.setup()
-
-import os
 from django.conf import settings
 from django.template import loader
 from contents.models import ContentCategory
-from goods.models import GoodsChannel, GoodsCategory, SKU, Goods, SpecificationOption, GoodsSpecification, \
-    SKUSpecification
+from goods.models import GoodsChannel, GoodsCategory, SKU, SpecificationOption, GoodsSpecification, SKUSpecification
 from copy import deepcopy
+
+
+def get_bread_crumb(category):
+    breadcrumb = {
+        'cat1': None,
+        'cat2': None,
+        'cat3': None
+    }
+    if not category.parent:
+        breadcrumb['cat1'] = category.name
+
+    elif not category.parent.parent:
+        breadcrumb['cat2'] = category.name
+        breadcrumb['cat1'] = category.parent.name
+    else:
+        breadcrumb['cat3'] = category.name
+        breadcrumb['cat2'] = category.parent.name
+        breadcrumb['cat1'] = category.parent.parent.name
+    return breadcrumb
 
 
 def get_goods_and_spec(sku_id):
@@ -86,7 +97,3 @@ def get_categories():
     for content_category in content_categories:
         contents[content_category.key] = content_category.content_set.all()
     return categories
-
-
-if __name__ == '__main__':
-    generate_static_sku_detail_html(1)
